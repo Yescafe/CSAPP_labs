@@ -249,7 +249,12 @@ int isLessOrEqual(int x, int y) {
  *   Rating: 4 
  */
 int logicalNeg(int x) {
-  return (~x + 1) & 1;
+  int x32 = x;
+  int x16 = (x32 >> 16) | x32;
+  int x08 = (x16 >>  8) | x16;
+  int x04 = (x08 >>  4) | x08;
+  int x02 = (x04 >>  2) | x04;
+  return 1 & ~(x02 >> 1 | x02);
 }
 /* howManyBits - return the minimum number of bits required to represent x in
  *             two's complement
@@ -264,7 +269,39 @@ int logicalNeg(int x) {
  *  Rating: 4
  */
 int howManyBits(int x) {
-  return -1;
+  int shift16, shift08, shift04, shift02, shift01;
+  int x32, x16, x08, x04, x02, x01;
+  int n_bits = 0;
+  const int minus_1 = ~0;
+  
+  // Copied from conditional()
+  int opd = !(x >> 31) + ~0;
+  x = (x + ~x) + ((x + 1) & ~opd) + ((~x + 1) & opd);
+ 
+  x32 = x;
+  
+  shift16 = 16 & (!((x32 >> 16) ^ 0) + minus_1);
+  n_bits += shift16;
+  x16 = x32 >> shift16;
+
+  shift08 = 8 & (!((x16 >> 8) ^ 0) + minus_1);
+  n_bits += shift08;
+  x08 = x16 >> shift08;
+
+  shift04 = 4 & (!((x08 >> 4) ^ 0) + minus_1);
+  n_bits += shift04;
+  x04 = x08 >> shift04;
+
+  shift02 = 2 & (!((x04 >> 2) ^ 0) + minus_1);
+  n_bits += shift02;
+  x02 = x04 >> shift02;
+
+  shift01 = 1 & (!((x02 >> 1) ^ 0) + minus_1);
+  n_bits += shift01;
+  x01 = x02 >> shift01;
+  n_bits += 1 & x01;
+
+  return n_bits + 1;
 }
 //float
 /* 
@@ -310,13 +347,14 @@ int floatFloat2Int(unsigned uf) {
  *   Rating: 4
  */
 unsigned floatPower2(int x) {
-  unsigned INF = 0xff << 23;
-  if (x > 127) return INF;
-  else if (x < -127 - 22) return 0;
-  else if (x >= -127) {
-    int e = x + 0x7f;
-    return e << 23;
-  } else {
-    return 1 << (23 - (-x - 127));
-  }
+  // unsigned INF = 0xff << 23;
+  // if (x > 127) return INF;
+  // else if (x < -127 - 22) return 0;
+  // else if (x >= -127) {
+  //   int e = x + 0x7f;
+  //   return e << 23;
+  // } else {
+  //   return 1 << (23 - (-x - 127));
+  // }
+  return 2;
 }
