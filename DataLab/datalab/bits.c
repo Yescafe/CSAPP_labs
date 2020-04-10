@@ -316,7 +316,26 @@ int howManyBits(int x) {
  *   Rating: 4
  */
 unsigned floatScale2(unsigned uf) {
-  return 2;
+  const unsigned INF = 0xff << 23;
+  unsigned s = uf >> 31 & 1;
+  unsigned e = (uf & INF) >> 23;    // 注意优先级
+  unsigned f = uf & 0x7fffff;
+  if (e == 0xff) {   // 无穷和 NaN
+    return uf;
+  } else if (e == 0 && f == 0) {   // zero
+    return uf;
+  } else if (e == 0) {     // 非规格化数
+    if (f >> 22 & 1 == 1) {   // 非规格化边界转规格化
+      e += 1;
+    }
+    f <<= 1;
+  } else {     // 规格化数
+    e += 1;
+    if (e == 0xff) {
+      f = 0;
+    }
+  }
+  return s << 31 | e << 23 | f;
 }
 /* 
  * floatFloat2Int - Return bit-level equivalent of expression (int) f
@@ -331,7 +350,23 @@ unsigned floatScale2(unsigned uf) {
  *   Rating: 4
  */
 int floatFloat2Int(unsigned uf) {
-  return 2;
+  const unsigned INF = 0xff << 23;
+  const int IMAX = 0x80000000u;
+  int s = uf >> 31 & 1;
+  int e = (uf & INF) >> 23;
+  int f = uf & 0x7fffff;
+  if (e == 0 && f == 0) {    // float zero
+    return 0;
+  }
+  else if (e - 0x7f > 31) {      // out of up range of int32_t
+    return IMAX;
+  } else if (e - 0x7f < 0) {     // less than 0
+    return 0;
+  }
+  if (s == 0)                      // sign flag
+    return 1 << (e - 0x7f);
+  else
+    return ~(1 << (e - 0x7f)) + 1;
 }
 /* 
  * floatPower2 - Return bit-level equivalent of the expression 2.0^x
@@ -347,14 +382,15 @@ int floatFloat2Int(unsigned uf) {
  *   Rating: 4
  */
 unsigned floatPower2(int x) {
-  // unsigned INF = 0xff << 23;
-  // if (x > 127) return INF;
-  // else if (x < -127 - 22) return 0;
-  // else if (x >= -127) {
-  //   int e = x + 0x7f;
-  //   return e << 23;
-  // } else {
-  //   return 1 << (23 - (-x - 127));
-  // }
-  return 2;
+  const unsigned INF = 0xff << 23;
+  if (x > 127) {             　　　  // up limit
+    return INF;
+  } else if (x < -127 - 23) {　　　  // down limit
+    return 0;
+  } else if (x > -128) {       　　　// 规格化
+    return (x + 0x7f) << 23;
+  } else {                    　　　 // 非规格化
+    return 1 << 22 - (-x - 128);
+  }
+  return 0;
 }
