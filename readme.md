@@ -8,7 +8,7 @@ The ICS course provides a programmer's view of how computer systems execute prog
 ## Lab Assignments
 
 - [x] Data Lab
-- [ ] Bomb Lab
+- [x] Bomb Lab
 - [ ] Attack Lab
 - [ ] Buffer Lab
 - [ ] Architecture Lab
